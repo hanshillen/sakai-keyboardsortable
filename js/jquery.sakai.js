@@ -22,6 +22,7 @@ $(function() {
     _create: function() {
       this._super();
       this.options.keyboardHandle = this.options.keyboardHandle || this.options.items;
+      this._dragging = false;
       this.element.on("keydown", this.options.keyboardHandle, $.proxy(this._keydown, this));
       /* Live region used to provide feedback on drag actions to screen reader users*/
       this.liveRegion = $("<div class='ui-helper-hidden-accessible'></div>").liveregion().appendTo(document.body);
@@ -31,7 +32,7 @@ $(function() {
         "data-at-shortcutkeys": '{"u":"drag item up","d":"drag item down"}'
       }).blur($.proxy(function(event) {
         var $target = $(event.target);
-        if (this._isDragging($target)) {
+        if (this._isDragging()) {
           this._toggleDragMode($target, this._closestSortableNode($target));
         }
       }, this)).click($.proxy(function(event) {
@@ -53,19 +54,19 @@ $(function() {
       
       switch (event.which) {
       case 27: // Esc
-        if (this._isDragging($target)) {
+        if (this._isDragging()) {
           this._toggleDragMode($target, $sortableNode);
         }
         break;
       case 38: // Up
       case 85: // u
-        if (event.ctrlKey || this._isDragging($target) || event.which === 85) {
+        if (event.ctrlKey || this._isDragging() || event.which === 85) {
           this._moveBackward($sortableNode, $target);
         }
         break;
       case 40: // Down
       case 68: // d
-        if (event.ctrlKey || this._isDragging($target) || event.which === 68) {
+        if (event.ctrlKey || this._isDragging() || event.which === 68) {
           this._moveForward($sortableNode, $target);
         }
         break;
@@ -80,19 +81,21 @@ $(function() {
       return $sortableNode
     },
 
-    _isDragging: function($node) {
-      return $node.attr("aria-grabbed") === "true";
+    _isDragging: function() {
+      return this._dragging;
     },
 
     _toggleDragMode: function($node, $sortableNode) {
-      var dragging = this._isDragging($node);
+      var dragging = this._isDragging();
       $sortableNode.toggleClass("sakai-dragging", !dragging);
       if (!dragging) {
         this.element.find(this.options.keyboardHandle).attr("aria-grabbed", "false");
+        this._dragging = true;
         $node.attr("aria-grabbed", "true");
         this._notify(_defaults.dragModeStartMsg);
       } else {
         $node.attr("aria-grabbed", "false");
+        this._dragging = false;
         this._notify(_defaults.dragModeEndMsg);
       }
     },
@@ -118,6 +121,9 @@ $(function() {
     },
     
     _highlightDrag: function($node){
+      if (this._isDragging()) {
+        return;
+      }
       $node.addClass("sakai-dragging-temp");
       setTimeout(function(){
         $node.removeClass("sakai-dragging-temp");

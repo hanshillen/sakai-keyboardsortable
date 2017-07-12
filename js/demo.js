@@ -25,7 +25,6 @@ $(function()
           });
   
   $('a[role=button]').keydown(function (event) {
-    console.log("test");
     if (event.keyCode === 32) {
         event.preventDefault();
         $(this).click();
